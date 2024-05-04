@@ -83,6 +83,7 @@ async def stats_request(update, context):
     user_id = update.effective_user.id
     status = cursor.execute('''SELECT status FROM users
                                     WHERE user_id = ?''', (user_id,)).fetchone()[0]
+    context.user_data['page'] = context.user_data.get('page', 0)
     if context.user_data.get('step') == ADMIN_MODE and update.message.text not in ('>', '<') and\
             status != "user":
         if update.message.text == 'Выйти':
@@ -153,6 +154,7 @@ async def stats_request(update, context):
 
 async def handle_poll(update, context):
     user_id = update.effective_user.id
+    context.user_data['page'] = context.user_data.get('page', 0)
     if context.user_data.get('step') is not None:
         reply_markup = ReplyKeyboardRemove()
         if context.user_data.get('step') == REGISTRATION_STEP and update.message.text == "Да":
@@ -169,7 +171,7 @@ async def handle_poll(update, context):
             if update.message.text.lower() in cities:
                 keyboard = [['Список опросов']]
                 reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-                context.user_data['city'] = update.message.text
+                context.user_data['city'] = update.message.text.capitalize()
                 cursor.execute("INSERT INTO users (user_id, status, city) VALUES (?, ?, ?)",
                                (int(user_id), "user", context.user_data['city']))
                 conn.commit()
@@ -207,7 +209,7 @@ async def handle_poll(update, context):
         if n_pages > 1:
             keyboard.append(['<', '>'])
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-        await update.message.reply_text("Список опросов", reply_markup=reply_markup)
+        await update.message.reply_text("Выберите желаемый опрос", reply_markup=reply_markup)
         return
     elif context.user_data.get('available_surveys') is not None and \
             (update.message.text[update.message.text.find('.') + 2:] in
